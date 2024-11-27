@@ -9,6 +9,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { ClerkProvider } from "@clerk/clerk-expo";
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 import * as SecureStore from "expo-secure-store";
+import Header from "@/components/Header";
+import { StatusBar } from "expo-status-bar";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -51,10 +53,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider
-      publishableKey={CLERK_PUBLISHABLE_KEY!}
-      tokenCache={tokenCache}
-    >
+    <>
       <Stack>
         <Stack.Screen name='index' options={{ headerShown: false }} />
         <Stack.Screen
@@ -85,9 +84,10 @@ export default function RootLayout() {
         />
          <Stack.Screen
           name='home'
-          options={{ title: "Home", presentation: "modal" }}
+          options={{ title: "Home", presentation: "containedModal"}}
         />
       </Stack>
-    </ClerkProvider>
+      <StatusBar style="light" />
+      </>
   );
 }

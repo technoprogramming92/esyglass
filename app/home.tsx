@@ -3,7 +3,8 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Image 
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router, useRouter } from 'expo-router';
+import { router, Stack, useRouter } from 'expo-router';
+import Header from '@/components/Header';
 
 interface User {
     firstName: string;
@@ -37,22 +38,13 @@ const Page: React.FC = () => {
       ];
 
   return (
+   
+    
     <ScrollView contentContainerStyle={styles.container}>
-      <LinearGradient
-        colors={['#6a11cb', '#2575fc']}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        {user && (
-          <>
-            <Image source={{ uri: user.profilePic }} style={styles.profilePic} />
-            <Text style={styles.userName}>Hello, {user.firstName}!</Text>
-          </>
-        )}
-        <Text style={styles.title}>RecInfo</Text>
-        <Text style={styles.subtitle}>Dashboard</Text>
-      </LinearGradient>
+      <Stack.Screen options={{
+      header: () => <Header />
+      }}/>
+      
       <View style={styles.searchContainer}>
         <FontAwesome name="search" size={20} color="#888" style={styles.searchIcon} />
         <TextInput style={styles.searchInput} placeholder="Search For..." />
@@ -67,6 +59,7 @@ const Page: React.FC = () => {
         ))}
       </View>
     </ScrollView>
+    
   );
 };
 

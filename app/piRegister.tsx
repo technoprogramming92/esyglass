@@ -10,60 +10,58 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Define TypeScript interfaces
 interface User {
   firstName: string;
   profilePic: string;
 }
 
 interface PIRegisterData {
-  "PI-No": number;
-  "PI-Date": string;
-  partyName: string;
-  Quantity: string;
-  AreaSQM: number;
-  Amount: string;
-  id: string;
+  GrpFld1: string; // Party Name
+  GrpFld2: string; // PI Number
+  OdrTotQty: number; // Total Quantity
+  OdrTotArea: number; // Total Area
+  OdrBsAmt: number; // Basic Amount
+  OdrNetAmt: number; // Net Amount
 }
 
 const PIRegister: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [data, setData] = useState<PIRegisterData[]>([]);
-  const [filteredData, setFilteredData] = useState<PIRegisterData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 5;
-
-  // Filter state
+  // Filters state
   const [filters, setFilters] = useState({
-    piNo: '',
-    partyName: '',
-    piDate: '',
+    odrNoFrom: 100,
+    odrNoTo: 200,
   });
 
-  // Fetch user data from AsyncStorage
-  useEffect(() => {
-    const loadUserData = async () => {
-      const userData = await AsyncStorage.getItem('user');
-      if (userData) {
-        setUser(JSON.parse(userData));
-      }
-    };
-    loadUserData();
-  }, []);
-
-  // Fetch PI register data from API
+  // Fetch PI Register data from API
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const response = await fetch('https://6736c416aafa2ef2223171a1.mockapi.io/esyapi/piRegister');
+        const response = await fetch('http://api4.rectrans.in/api/EstOrder/GetEstOdrByRefNo', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            GrpFlag: 'AC',
+            OdrNoFrom: filters.odrNoFrom,
+            OdrNoTo: filters.odrNoTo,
+            PiNoFrom: 0,
+            PiNoTo: 0,
+            SpName: '',
+            AcPRefNo: 0,
+          }),
+        });
         const result = await response.json();
-        setData(result);
-        setFilteredData(result); // Initialize filteredData with full dataset
+        if (Array.isArray(result)) {
+          setData(result);
+        } else {
+          setData([]);
+        }
       } catch (error) {
         console.error('Error fetching PI Register data:', error);
       } finally {
@@ -71,39 +69,17 @@ const PIRegister: React.FC = () => {
       }
     };
     fetchData();
-  }, []);
-
-  // Apply filters
-  useEffect(() => {
-    const filtered = data.filter((item) => {
-      const matchesPiNo = filters.piNo ? item["PI-No"].toString().includes(filters.piNo) : true;
-      const matchesPartyName = filters.partyName
-        ? item.partyName.toLowerCase().includes(filters.partyName.toLowerCase())
-        : true;
-      const matchesPiDate = filters.piDate
-        ? new Date(item["PI-Date"]).toLocaleDateString().includes(filters.piDate)
-        : true;
-      return matchesPiNo && matchesPartyName && matchesPiDate;
-    });
-    setFilteredData(filtered);
-    setCurrentPage(1); // Reset to first page on filter change
-  }, [filters, data]);
-
-  // Paginated data
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
+  }, [filters]);
 
   // Render each row of the table
   const renderItem = ({ item }: { item: PIRegisterData }) => (
     <View style={styles.tableRow}>
-      <Text style={[styles.tableCell, styles.columnPI]}>{item["PI-No"]}</Text>
-      <Text style={[styles.tableCell, styles.columnDate]}>{new Date(item["PI-Date"]).toLocaleDateString()}</Text>
-      <Text style={[styles.tableCell, styles.columnParty]}>{item.partyName}</Text>
-      <Text style={[styles.tableCell, styles.columnQuantity]}>{item.Quantity}</Text>
-      <Text style={[styles.tableCell, styles.columnArea]}>{item.AreaSQM}</Text>
-      <Text style={[styles.tableCell, styles.columnAmount]}>{item.Amount}</Text>
+      <Text style={[styles.tableCell, styles.columnParty]}>{item.GrpFld1}</Text>
+      <Text style={[styles.tableCell, styles.columnPi]}>{item.GrpFld2}</Text>
+      <Text style={[styles.tableCell, styles.columnQty]}>{item.OdrTotQty}</Text>
+      <Text style={[styles.tableCell, styles.columnArea]}>{item.OdrTotArea}</Text>
+      <Text style={[styles.tableCell, styles.columnBaseAmt]}>{item.OdrBsAmt.toFixed(2)}</Text>
+      <Text style={[styles.tableCell, styles.columnNetAmt]}>{item.OdrNetAmt.toFixed(2)}</Text>
     </View>
   );
 
@@ -116,11 +92,7 @@ const PIRegister: React.FC = () => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        {user && (
-          <>
-            <Text style={styles.userName}>Hello, {user.firstName}!</Text>
-          </>
-        )}
+        {user && <Text style={styles.userName}>Hello, {user.firstName}!</Text>}
         <Text style={styles.title}>PI Register</Text>
       </LinearGradient>
 
@@ -128,21 +100,21 @@ const PIRegister: React.FC = () => {
       <View style={styles.filterContainer}>
         <TextInput
           style={styles.filterInput}
-          placeholder="Filter by PI No"
-          value={filters.piNo}
-          onChangeText={(text) => setFilters((prev) => ({ ...prev, piNo: text }))}
+          placeholder="Order No From"
+          value={filters.odrNoFrom.toString()}
+          keyboardType="numeric"
+          onChangeText={(text) =>
+            setFilters((prev) => ({ ...prev, odrNoFrom: parseInt(text) || 0 }))
+          }
         />
         <TextInput
           style={styles.filterInput}
-          placeholder="Filter by Party Name"
-          value={filters.partyName}
-          onChangeText={(text) => setFilters((prev) => ({ ...prev, partyName: text }))}
-        />
-        <TextInput
-          style={styles.filterInput}
-          placeholder="Filter by PI Date"
-          value={filters.piDate}
-          onChangeText={(text) => setFilters((prev) => ({ ...prev, piDate: text }))}
+          placeholder="Order No To"
+          value={filters.odrNoTo.toString()}
+          keyboardType="numeric"
+          onChangeText={(text) =>
+            setFilters((prev) => ({ ...prev, odrNoTo: parseInt(text) || 0 }))
+          }
         />
       </View>
 
@@ -154,47 +126,23 @@ const PIRegister: React.FC = () => {
           <View style={styles.tableContainer}>
             {/* Table header */}
             <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, styles.columnPI]}>PI No</Text>
-              <Text style={[styles.tableHeaderText, styles.columnDate]}>PI Date</Text>
               <Text style={[styles.tableHeaderText, styles.columnParty]}>Party Name</Text>
-              <Text style={[styles.tableHeaderText, styles.columnQuantity]}>Quantity</Text>
-              <Text style={[styles.tableHeaderText, styles.columnArea]}>Area SQM</Text>
-              <Text style={[styles.tableHeaderText, styles.columnAmount]}>Amount</Text>
+              <Text style={[styles.tableHeaderText, styles.columnPi]}>PI Number</Text>
+              <Text style={[styles.tableHeaderText, styles.columnQty]}>Total Qty</Text>
+              <Text style={[styles.tableHeaderText, styles.columnArea]}>Total Area</Text>
+              <Text style={[styles.tableHeaderText, styles.columnBaseAmt]}>Basic Amt</Text>
+              <Text style={[styles.tableHeaderText, styles.columnNetAmt]}>Net Amt</Text>
             </View>
 
             {/* Table body */}
             <FlatList
-              data={paginatedData}
+              data={data}
               renderItem={renderItem}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item, index) => index.toString()}
             />
           </View>
         </ScrollView>
       )}
-
-      {/* Pagination */}
-      <View style={styles.paginationContainer}>
-        <TouchableOpacity
-          disabled={currentPage === 1}
-          onPress={() => setCurrentPage((prev) => prev - 1)}
-          style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
-        >
-          <Text style={styles.paginationText}>Previous</Text>
-        </TouchableOpacity>
-        <Text style={styles.paginationText}>
-          Page {currentPage} of {Math.ceil(filteredData.length / rowsPerPage)}
-        </Text>
-        <TouchableOpacity
-          disabled={currentPage === Math.ceil(filteredData.length / rowsPerPage)}
-          onPress={() => setCurrentPage((prev) => prev + 1)}
-          style={[
-            styles.paginationButton,
-            currentPage === Math.ceil(filteredData.length / rowsPerPage) && styles.disabledButton,
-          ]}
-        >
-          <Text style={styles.paginationText}>Next</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -208,7 +156,8 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 40,
     alignItems: 'center',
-    borderRadius: 15,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   userName: {
     fontSize: 20,
@@ -223,6 +172,7 @@ const styles = StyleSheet.create({
   },
   filterContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 10,
     marginVertical: 10,
   },
@@ -266,44 +216,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 10,
   },
-  columnPI: {
-    width: 70,
+  columnParty: {
+    width: 200,
   },
-  columnDate: {
+  columnPi: {
     width: 100,
   },
-  columnParty: {
-    width: 150,
-  },
-  columnQuantity: {
-    width: 80,
+  columnQty: {
+    width: 100,
   },
   columnArea: {
-    width: 100,
+    width: 120,
   },
-  columnAmount: {
-    width: 100,
+  columnBaseAmt: {
+    width: 120,
   },
-  paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginHorizontal: 10,
-    marginBottom: 10,
-  },
-  paginationButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 5,
-  },
-  disabledButton: {
-    backgroundColor: '#ddd',
-  },
-  paginationText: {
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
+  columnNetAmt: {
+    width: 120,
   },
 });
 
