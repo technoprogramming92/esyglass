@@ -48,8 +48,8 @@ const PIRegister: React.FC = () => {
           },
           body: JSON.stringify({
             GrpFlag: 'AC',
-            OdrNoFrom: filters.odrNoFrom,
-            OdrNoTo: filters.odrNoTo,
+            OdrNoFrom: 100,
+            OdrNoTo: 1000,
             PiNoFrom: 0,
             PiNoTo: 0,
             SpName: '',

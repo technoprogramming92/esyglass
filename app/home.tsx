@@ -41,9 +41,7 @@ const Page: React.FC = () => {
    
     
     <ScrollView contentContainerStyle={styles.container}>
-      <Stack.Screen options={{
-      header: () => <Header />
-      }}/>
+      
       
       <View style={styles.searchContainer}>
         <FontAwesome name="search" size={20} color="#888" style={styles.searchIcon} />
